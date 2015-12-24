@@ -7,7 +7,7 @@
     <script src="lispm.js"></script>
     <style>
       .terminal {
-        width: 640px;
+        width: 480px;
         height: auto;
         border: 1px solid;
       }
@@ -16,7 +16,9 @@
   <body>
     <div id="content"></div>
     <script>
-      var lispm = new LispM();
+      var lispm = new LispM({scrWidth: 480, scrHeight: 320,
+                             width: 60, height: 20
+      });
       document.getElementById("content").appendChild(lispm.display);
     </script>
   </body>

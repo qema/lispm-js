@@ -13,8 +13,12 @@ function LispM(opt) {
 
     // set up interpreter
     bscheme = new BiwaScheme.Interpreter(function(e, state) {
-      this.printString(e.message + "\n", fg, bg);
+      this.printString(e.message + "\n");
     }.bind(this));
+
+    puts = function(s) {
+      this.printString(s + "\n");
+    }.bind(this);
 
     BiwaScheme.define_libfunc("clear", 0, 0, function(args) {
       this.clear(fg, bg);
@@ -29,16 +33,15 @@ function LispM(opt) {
     // setup repl loop
     var replIter;
     replIter = function() {
-      this.printString("> ", fg, bg);
+      this.printString("> ");
       this.input(function(s) {
 	bscheme.evaluate(s, function(result) {
           if (result !== undefined && result !== BiwaScheme.undef) {
-            this.printString("=> " + BiwaScheme.to_write(result) + "\n",
-			     fg, bg);
+            this.printString("=> " + BiwaScheme.to_write(result) + "\n");
           }
 	}.bind(this));
 	replIter();
-      }.bind(this), fg, bg);
+      }.bind(this));
     }.bind(this)
     replIter();
   }.bind(this);
@@ -51,13 +54,15 @@ function LispM(opt) {
     recalibrateCursor = true;
   }
   
-  this.printString = function(s, fg, bg) {
+  this.printString = function(s, f, b) {
+    if (typeof f === "undefined") { f = fg };
+    if (typeof b === "undefined") { b = bg };
     for (var i = 0; i < s.length; i++) {
       var c = s.charAt(i);
       if (c == "\n") {
 	this.cursorNewline();
       } else {
-        this.terminal.putChar(curX, curY, c, fg, bg);
+        this.terminal.putChar(curX, curY, c, f, b);
 	this.cursorForward();
       }
     }
