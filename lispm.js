@@ -16,8 +16,8 @@ function LispM(opt) {
       this.printString(e.message + "\n");
     }.bind(this));
 
-    puts = function(s) {
-      this.printString(s + "\n");
+    puts = function(s, no_newline) {
+      this.printString(s + (no_newline ? "" : "\n"));
     }.bind(this);
 
     BiwaScheme.define_libfunc("clear", 0, 0, function(args) {
