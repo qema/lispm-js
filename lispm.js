@@ -5,32 +5,52 @@ function LispM(opt) {
   this.running = false;
 
   var bscheme;
+  var fg = 0x000000, bg = 0xffffff;
   this.terminal.ready = function() {
     this.running = true;
 
-    // setup interpreter
+    this.clear(fg, bg);
+
+    // set up interpreter
     bscheme = new BiwaScheme.Interpreter(function(e, state) {
-      this.printString(e.message + "\n");
+      this.printString(e.message + "\n", fg, bg);
     }.bind(this));
-    console.log(bscheme);
+
+    BiwaScheme.define_libfunc("clear", 0, 0, function(args) {
+      this.clear(fg, bg);
+      return BiwaScheme.undef;
+    }.bind(this));
+
+    BiwaScheme.define_libfunc("color", 2, 2, function(args) {
+      fg = args[0];
+      bg = args[1];
+    });
 
     // setup repl loop
     var replIter;
     replIter = function() {
-      this.printString("> ");
+      this.printString("> ", fg, bg);
       this.input(function(s) {
 	bscheme.evaluate(s, function(result) {
           if (result !== undefined && result !== BiwaScheme.undef) {
-            this.printString("=> " + BiwaScheme.to_write(result) + "\n");
+            this.printString("=> " + BiwaScheme.to_write(result) + "\n",
+			     fg, bg);
           }
 	}.bind(this));
 	replIter();
-      }.bind(this));
+      }.bind(this), fg, bg);
     }.bind(this)
     replIter();
   }.bind(this);
 
+
   var curX = 0, curY = 0;
+  this.clear = function(fg, bg) {
+    this.terminal.clear(fg, bg);
+    this.moveCursor(0, 0);
+    recalibrateCursor = true;
+  }
+  
   this.printString = function(s, fg, bg) {
     for (var i = 0; i < s.length; i++) {
       var c = s.charAt(i);
@@ -74,7 +94,7 @@ function LispM(opt) {
       }
     }
     for (var x = 0; x < this.terminal.width; x++) {
-      this.terminal.putChar(x, this.terminal.height - 1, 0);
+      this.terminal.putChar(x, this.terminal.height - 1, 0, fg, bg);
     }
   };
 
@@ -129,7 +149,6 @@ function LispM(opt) {
       this.moveCursor(startX, startY);
       this.printString(s, fg, bg);
       this.moveCursor(oldX, oldY);
-      
       if (done) {
 	this.printString("\n", fg, bg);
 	this.showCursor = false;
@@ -142,11 +161,17 @@ function LispM(opt) {
     this.getch(getchLoop);
   };
 
-  var lastX = -1, lastY, lastAtt, att, lastShow = false;
+  var lastX, lastY, lastAtt, att, lastShow = false, recalibrateCursor = true;
   this.terminal.update = function() {
     if (curX != lastX || curY != lastY || lastShow != this.showCursor) {
-      att = this.terminal.getCharAttribs(curX, curY);
-      if (lastX >= 0) {
+      att = {
+	value: this.terminal.getChar(curX, curY),
+	fg: fg,
+	bg: bg
+      };
+      if (recalibrateCursor) {
+	recalibrateCursor = false;
+      } else {
 	var c = this.terminal.getChar(lastX, lastY);
         this.terminal.putChar(lastX, lastY, c, lastAtt.fg, lastAtt.bg);
       }
