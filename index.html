@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="../lib/biwascheme/biwascheme.js"></script>
+    <script src="../lib/pixi/pixi.js"></script>
+    <script src="../terminal/terminal.js"></script>
+    <script src="lispm.js"></script>
+    <style>
+      .terminal {
+        width: 640px;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="content"></div>
+    <script>
+      var lispm = new LispM();
+      document.getElementById("content").appendChild(lispm.display);
+    </script>
+  </body>
+</html>
