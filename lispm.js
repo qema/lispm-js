@@ -32,13 +32,35 @@ function LispM(opt) {
   this.cursorNewline = function() {
     curX = 0;
     curY++;
-  }
+    if (curY >= this.terminal.height) {
+      this.scroll();
+    }
+  };
 
   this.cursorForward = function() {
     curX++;
     if (curX >= this.terminal.width) {
       curX = 0;
       curY++;
+    }
+    if (curY >= this.terminal.height) {
+      this.scroll();
+    }
+  };
+
+  this.scroll = function() {
+    curY--;
+    lastY--;
+    for (var y = 1; y < this.terminal.height; y++) {
+      for (var x = 0; x < this.terminal.width; x++) {
+	var c = this.terminal.getChar(x, y);
+	var fg = this.terminal.getCharFG(x, y);
+	var bg = this.terminal.getCharBG(x, y);
+	this.terminal.putChar(x, y - 1, c, fg, bg);
+      }
+    }
+    for (var x = 0; x < this.terminal.width; x++) {
+      this.terminal.putChar(x, this.terminal.height - 1, 0);
     }
   };
 
@@ -50,7 +72,7 @@ function LispM(opt) {
         curY--;
       }
     }
-  }
+  };
   
   this.moveCursor = function(x, y) {
     curX = x;
