@@ -3,13 +3,27 @@ function LispM(opt) {
   this.display = this.terminal.view;
 
   this.running = false;
+
+  var bscheme;
   this.terminal.ready = function() {
     this.running = true;
+
+    // setup interpreter
+    bscheme = new BiwaScheme.Interpreter(function(e, state) {
+      this.printString(e.message + "\n");
+    }.bind(this));
+    console.log(bscheme);
+
+    // setup repl loop
     var replIter;
     replIter = function() {
       this.printString("> ");
       this.input(function(s) {
-	this.printString("Output: " + s + "\n");
+	bscheme.evaluate(s, function(result) {
+          if (result !== undefined && result !== BiwaScheme.undef) {
+            this.printString("=> " + BiwaScheme.to_write(result) + "\n");
+          }
+	}.bind(this));
 	replIter();
       }.bind(this));
     }.bind(this)
@@ -33,7 +47,7 @@ function LispM(opt) {
     curX = 0;
     curY++;
     if (curY >= this.terminal.height) {
-      this.scroll();
+      this.scrollDown();
     }
   };
 
@@ -44,11 +58,11 @@ function LispM(opt) {
       curY++;
     }
     if (curY >= this.terminal.height) {
-      this.scroll();
+      this.scrollDown();
     }
   };
 
-  this.scroll = function() {
+  this.scrollDown = function() {
     curY--;
     lastY--;
     for (var y = 1; y < this.terminal.height; y++) {
@@ -93,17 +107,17 @@ function LispM(opt) {
 	  this.cursorBackward();
 	  this.terminal.putChar(curX, curY, 0, fg, bg);
 	}
-      } else if (code == 37) {  // left arrow
+      } else if (code == (37 | 0xff00)) {  // left arrow
 	if (index > 0) {
 	  index--;
   	  this.cursorBackward();
 	}
-      } else if (code == 39) {  // right arrow
+      } else if (code == (39 | 0xff00)) {  // right arrow
 	if (index < s.length) {
 	  index++;
 	  this.cursorForward();
 	}
-      } else if (code == 38 || code == 40) { // up or down
+      } else if (code == (38 | 0xff00) || code == (40 | 0xff00)) { // up/down
       } else {
 	var left = s.substring(0, index);
 	var right = s.substring(index, s.length);
@@ -155,7 +169,7 @@ function LispM(opt) {
     if (event.keyCode >= 37 && event.keyCode <= 40) { // arrow keys
       if (getchQueue.length > 0) {
 	var callback = getchQueue.shift();
-	callback(event.keyCode);
+	callback(event.keyCode | 0xff00);
       }
     }
   });
