@@ -5,7 +5,15 @@ function LispM(opt) {
   this.running = false;
   this.terminal.ready = function() {
     this.running = true;
-    this.input(function(s) { this.printString(s) }.bind(this));
+    var replIter;
+    replIter = function() {
+      this.printString("> ");
+      this.input(function(s) {
+	this.printString("Output: " + s + "\n");
+	replIter();
+      }.bind(this));
+    }.bind(this)
+    replIter();
   }.bind(this);
 
   var curX = 0, curY = 0;
@@ -77,7 +85,6 @@ function LispM(opt) {
       } else {
 	var left = s.substring(0, index);
 	var right = s.substring(index, s.length);
-	console.log(s,index,s.length - index,s.length, left, right);
 	s = left + String.fromCharCode(code) + right;
 	index++;
 	this.cursorForward();
