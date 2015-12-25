@@ -1,11 +1,27 @@
+function parenLevel(s) {
+  var level = 0;
+  for (var i = 0; i < s.length; i++) {
+    var c = s.charAt(i);
+    if (c == "(" || c == "[") {
+      level++;
+    } else if (c == ")" || c == "]") {
+      level--;
+    }
+  }
+  return level;
+}
+
 function LispM(opt) {
+  const INDENT_LENGTH = 2;
+  const FG_DEFAULT = 0x000000, BG_DEFAULT = 0xffffff;
+  
   this.terminal = new Terminal(opt);
   this.display = this.terminal.view;
 
   this.running = false;
 
   var bscheme;
-  var fg = 0x000000, bg = 0xffffff;
+  var fg = FG_DEFAULT, bg = BG_DEFAULT;
   this.terminal.ready = function() {
     this.running = true;
 
@@ -32,14 +48,33 @@ function LispM(opt) {
 
     // setup repl loop
     var replIter;
+    var wholeString = "", indent = 0;
     replIter = function() {
-      this.printString("> ");
+      if (wholeString == "") {
+        this.printString("> ");
+      } else {
+	this.printString(".." + (new Array(indent + 1).join(" ")));
+      }
       this.input(function(s) {
-	bscheme.evaluate(s, function(result) {
-          if (result !== undefined && result !== BiwaScheme.undef) {
-            this.printString("=> " + BiwaScheme.to_write(result) + "\n");
-          }
-	}.bind(this));
+	wholeString += s;
+	var level = parenLevel(wholeString);
+	if (level == 0) {
+	  try {
+	    bscheme.evaluate(wholeString, function(result) {
+	      wholeString = "";
+	      indent = 0;
+	      if (result !== undefined && result !== BiwaScheme.undef) {
+		this.printString("=> " + BiwaScheme.to_write(result) + "\n");
+	      }
+	    }.bind(this));
+	  } catch(e) {
+	    wholeString = "";
+	    indent = 0;
+	    this.printString(e.message + "\n");
+	  }
+	} else {
+	  indent = INDENT_LENGTH * level;
+	}
 	replIter();
       }.bind(this));
     }.bind(this)
