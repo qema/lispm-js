@@ -161,7 +161,7 @@ function LispM(opt) {
       var done = false;
       if (code == 13) {  // enter
 	done = true;
-      } else if (code == 8) {  // backspace
+      } else if (code == (8 | 0xff00)) {  // backspace
 	if (s.length > 0) {
 	  s = s.substring(0, s.length - 1);
 	  this.cursorBackward();
@@ -231,11 +231,16 @@ function LispM(opt) {
   };
 
   document.addEventListener("keydown", function(event) {
-    if (event.keyCode >= 37 && event.keyCode <= 40) { // arrow keys
+    if ((event.keyCode >= 37 && event.keyCode <= 40) ||
+        event.keyCode == 8) { // arrow keys or backspace
       if (getchQueue.length > 0) {
 	var callback = getchQueue.shift();
 	callback(event.keyCode | 0xff00);
       }
+    }
+    // don't go back on backspace
+    if (event.keyCode == 8) {
+      event.preventDefault();
     }
   });
 
@@ -243,6 +248,10 @@ function LispM(opt) {
     if (getchQueue.length > 0) {
       var callback = getchQueue.shift();
       callback(event.charCode);
+    }
+    // don't scroll when spacebar is pressed
+    if (event.keyCode == 32 && event.target == document.body) {
+      event.preventDefault();
     }
   });
 }
