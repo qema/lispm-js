@@ -56,7 +56,7 @@ function LispM(opt) {
 	this.printString(".." + (new Array(indent + 1).join(" ")));
       }
       this.input(function(s) {
-	wholeString += s;
+	wholeString += s + "\n";
 	var level = parenLevel(wholeString);
 	if (level == 0) {
 	  try {
