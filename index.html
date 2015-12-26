@@ -5,19 +5,17 @@
     <script src="../lib/pixi/pixi.js"></script>
     <script src="../terminal/terminal.js"></script>
     <script src="lispm.js"></script>
-    <style>
-      .terminal {
-        width: 480px;
-        height: auto;
-        border: 1px solid;
-      }
-    </style>
   </head>
   <body>
     <div id="content"></div>
     <script>
-      var lispm = new LispM({scrWidth: 480, scrHeight: 320,
-                             width: 60, height: 20
+      var lispm = new LispM({
+	scrWidth: 480,
+	scrHeight: 320,
+	width: 60,
+	height: 20,
+	fg: 0x000000,
+	bg: 0xffffff
       });
       document.getElementById("content").appendChild(lispm.display);
     </script>

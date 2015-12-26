@@ -12,77 +12,20 @@ function parenLevel(s) {
 }
 
 function LispM(opt) {
+  opt = opt || {};
+  
   const INDENT_LENGTH = 2;
   const FG_DEFAULT = 0x000000, BG_DEFAULT = 0xffffff;
+  
+  var fg = (isNaN(opt.fg) ? FG_DEFAULT : opt.fg);
+  var bg = (isNaN(opt.bg) ? BG_DEFAULT : opt.bg);
   
   this.terminal = new Terminal(opt);
   this.display = this.terminal.view;
 
-  this.running = false;
-
-  var bscheme;
-  var fg = FG_DEFAULT, bg = BG_DEFAULT;
-  this.terminal.ready = function() {
-    this.running = true;
-
-    this.clear(fg, bg);
-
-    // set up interpreter
-    bscheme = new BiwaScheme.Interpreter(function(e, state) {
-      this.printString(e.message + "\n");
-    }.bind(this));
-
-    puts = function(s, no_newline) {
-      this.printString(s + (no_newline ? "" : "\n"));
-    }.bind(this);
-
-    BiwaScheme.define_libfunc("clear", 0, 0, function(args) {
-      this.clear(fg, bg);
-      return BiwaScheme.undef;
-    }.bind(this));
-
-    BiwaScheme.define_libfunc("color", 2, 2, function(args) {
-      fg = args[0];
-      bg = args[1];
-    });
-
-    // setup repl loop
-    var replIter;
-    var wholeString = "", indent = 0;
-    replIter = function() {
-      if (wholeString == "") {
-        this.printString("> ");
-      } else {
-	this.printString(".." + (new Array(indent + 1).join(" ")));
-      }
-      this.input(function(s) {
-	wholeString += s + "\n";
-	var level = parenLevel(wholeString);
-	if (level == 0) {
-	  try {
-	    bscheme.evaluate(wholeString, function(result) {
-	      wholeString = "";
-	      indent = 0;
-	      if (result !== undefined && result !== BiwaScheme.undef) {
-		this.printString("=> " + BiwaScheme.to_write(result) + "\n");
-	      }
-	    }.bind(this));
-	  } catch(e) {
-	    wholeString = "";
-	    indent = 0;
-	    this.printString(e.message + "\n");
-	  }
-	} else {
-	  indent = INDENT_LENGTH * level;
-	}
-	replIter();
-      }.bind(this));
-    }.bind(this)
-    replIter();
-  }.bind(this);
-
-
   var curX = 0, curY = 0;
+  var lastX, lastY, lastAtt, att, lastShow = false, recalibrateCursor = true;
+  
   this.clear = function(fg, bg) {
     this.terminal.clear(fg, bg);
     this.moveCursor(0, 0);
@@ -201,7 +144,6 @@ function LispM(opt) {
     this.getch(getchLoop);
   };
 
-  var lastX, lastY, lastAtt, att, lastShow = false, recalibrateCursor = true;
   this.terminal.update = function() {
     if (curX != lastX || curY != lastY || lastShow != this.showCursor) {
       att = {
@@ -254,6 +196,65 @@ function LispM(opt) {
       event.preventDefault();
     }
   });
+  
+  var bscheme;
+  // set up interpreter
+  bscheme = new BiwaScheme.Interpreter(function(e, state) {
+    this.printString(e.message + "\n");
+  }.bind(this));
+
+  puts = function(s, no_newline) {
+    this.printString(s + (no_newline ? "" : "\n"));
+  }.bind(this);
+
+  BiwaScheme.define_libfunc("clear", 0, 0, function(args) {
+    this.clear(fg, bg);
+    return BiwaScheme.undef;
+  }.bind(this));
+
+  BiwaScheme.define_libfunc("color", 2, 2, function(args) {
+    fg = args[0];
+    bg = args[1];
+  });
+
+  this.terminal.ready = function() {
+    // setup repl loop
+    var replIter;
+    var wholeString = "", indent = 0;
+    replIter = function() {
+      if (wholeString == "") {
+	this.printString("> ");
+      } else {
+	this.printString(".." + (new Array(indent + 1).join(" ")));
+      }
+      this.input(function(s) {
+	wholeString += s + "\n";
+	var level = parenLevel(wholeString);
+	if (level == 0) {
+	  try {
+	    bscheme.evaluate(wholeString, function(result) {
+	      wholeString = "";
+	      indent = 0;
+	      if (result !== undefined && result !== BiwaScheme.undef) {
+		this.printString("=> " + BiwaScheme.to_write(result) + "\n");
+	      }
+	    }.bind(this));
+	  } catch(e) {
+	    wholeString = "";
+	    indent = 0;
+	    this.printString(e.message + "\n");
+	  }
+	} else {
+	  indent = INDENT_LENGTH * level;
+	}
+	replIter();
+      }.bind(this));
+    }.bind(this)
+
+    // start
+    this.running = true;
+    replIter();
+  }.bind(this);
 }
 
 
